@@ -172,7 +172,7 @@ int main() {
             circuits.push_back(newcircuit);
         } 
 
-        if (circuits[0].size() == 1000) { // If all junction boxes are in a single circuit, then we are done
+        if (circuits[0].size() == junctionBoxes.size()) { // If all junction boxes are in a single circuit, then we are done
             singlecircuit = true;
         }
 

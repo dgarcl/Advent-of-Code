@@ -87,7 +87,7 @@ int main() {
         
         // Remove padding above and below
         input.erase(input.begin());
-        input.erase(input.begin() + input.size());        
+        input.erase(input.begin() + input.size() - 1);        
     }
 
     cout << "In total, " << totalAccessedRolls << " rolls of paper can be removed by the Elves and their forklifts" << endl;

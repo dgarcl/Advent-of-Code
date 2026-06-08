@@ -30,6 +30,10 @@ int main() {
     for (int i = 0; i < input[0].size() - 1; i++) {
         string num = "";
 
+        if (i == 0) {
+            numbers.push_back(string(1, input.back()[0]));
+        }
+
         // If the next character of the last row is a space, we read the number of our column
         if (input.back()[i + 1] == ' ') {
             // Loop through the numbers in the column except the last column
