@@ -11,6 +11,6 @@ I’ve used some of the different programming languages I know:
 
 ## Credits
 
-All puzzle ideas and problem descriptions belong to **Advent of Code** and **Eric Wastl**. 
+All puzzle ideas and problem descriptions belong to **Advent of Code** and **Eric Wastl**.
 
-Check out their website at 👉 https://adventofcode.com/
+Check out their website at 👉 <https://adventofcode.com/>

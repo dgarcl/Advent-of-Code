@@ -1,7 +1,7 @@
-# Ignore Windows executables
+# Ignore executables
 *.exe
 
-# Ignore object files (compiler intermediates)
+# Ignore object files
 *.o
 *.obj
 
@@ -9,7 +9,11 @@
 input.txt
 test.txt
 
-# Ignore build folders (optional, common)
+# Ignore build folders
 build/
 bin/
 out/
+
+#Ignore IDE specific files
+.vscode/
+.idea/
