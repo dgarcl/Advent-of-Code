@@ -4,7 +4,7 @@
 #include <vector>
 using namespace std;
 
-vector<vector<int>> getConfigs(vector<vector<int>>& A, vector<int>& b) { // Finds all valid solutions for a given system of linear equations
+vector<int> getPresses(vector<vector<int>>& A, vector<int>& b) { // Finds the presses of every valid solution for a given system of linear equations
     vector<int> pivots;
     int rows = A.size();
     int cols = A[0].size();
@@ -33,22 +33,19 @@ vector<vector<int>> getConfigs(vector<vector<int>>& A, vector<int>& b) { // Find
         }
     }
 
-    for (int i = 0; i < pivots.size(); i++) { // Transforms our matrix into RREF
+    for (int i = 1; i < pivots.size(); i++) { // Transforms our matrix into RREF
         int p = pivots[i];
 
-        for (int j = i; j > 0; j--) { // Performs elimination on rows above the pivots
-            if (A[j - 1][p] == 1) {
-                b[j - 1] ^= b[i];
+        for (int j = i - 1; j >= 0; j--) { // Performs elimination on rows above the pivots
+            if (A[j][p] == 1) {
+                b[j] ^= b[i];
 
                 for (int k = p; k < cols; k++) {
-                    A[j - 1][k] ^= A[i][k];
+                    A[j][k] ^= A[i][k];
                 }
             }
         }
     }
-
-    vector<vector<int>> configs;
-    vector<vector<int>> nullspace;
 
     for (int i = 0; i < rows; i++) { // Scan the matrix for inconsistencies (0 = 1)
         int j;
@@ -60,11 +57,12 @@ vector<vector<int>> getConfigs(vector<vector<int>>& A, vector<int>& b) { // Find
         }
 
         if (j == cols && b[i] == 1) {
-            return vector<vector<int>>();
+            return vector<int>();
         }
     }
 
     vector<int> particularsol(cols, 0);
+    vector<vector<int>> nullspace;
 
     for (int i = 0; i < cols; i++) { // Build a particular solution and a basis for the nullspace
         int j;
@@ -91,21 +89,22 @@ vector<vector<int>> getConfigs(vector<vector<int>>& A, vector<int>& b) { // Find
         }
     }
 
-    int solutions = 1;
+    vector<int> presses;
+    int sols = 1;
 
     for (int i = 0; i < nullspace.size(); i++) { // Calculate the size of the solution set
-        solutions *= 2;
+        sols *= 2;
     }
 
-    for (int i = 0; i < solutions; i++) { // Build the different solutions of the system
-        vector<int> sol = particularsol;
+    for (int i = 0; i < sols; i++) { // Build the different solutions of the system
+        vector<int> config = particularsol;
         int it = 0;
         int mod = 1;
 
         while (it < nullspace.size()) { // Add vectors of the nullspace to our solution to find new valid solutions
             if ((i / mod) % 2 == 1) {
                 for (int j = 0; j < cols; j++) {
-                    sol[j] ^= nullspace[it][j];
+                    config[j] ^= nullspace[it][j];
                 }
             }
 
@@ -113,10 +112,16 @@ vector<vector<int>> getConfigs(vector<vector<int>>& A, vector<int>& b) { // Find
             mod *= 2;
         }
 
-        configs.push_back(sol);
+        int sum = 0;
+
+        for (int j = 0; j < config.size(); j++) {
+            sum += config[j];
+        }
+
+        presses.push_back(sum);
     }
 
-    return configs;
+    return presses;
 }
 
 int main() {
@@ -138,7 +143,7 @@ int main() {
         string lights = line.substr(1, brackets - 1);
         vector<int> toggles;
 
-        for (int i = 0; i < lights.length(); i++) { // Convert the line into a binary vector of the necessary toggles
+        for (int i = 0; i < lights.length(); i++) { // Convert the string of lights into a binary vector of the necessary toggles
             if (lights[i] == '#') {
                 toggles.push_back(1);
             } else {
@@ -146,11 +151,10 @@ int main() {
             }
         }
 
-        line = line.substr(brackets + 2, (braces - 1) - (brackets + 2));
         vector<vector<int>> buttons;
-        int parsed = 0;
+        int parsed = brackets + 1;
 
-        while (parsed < line.length()) { // Build a vector of vectors with the lights that are affected for each button
+        while (parsed < braces - 1) { // Build a vector of vectors with the lights that are affected for each button
             vector<int> temp;
             int parenthesis = line.find(")", parsed);
 
@@ -164,28 +168,20 @@ int main() {
             parsed = parenthesis + 1;
         }
 
-        vector<vector<int>> changes(toggles.size(), vector<int>(buttons.size(), 0));
+        vector<vector<int>> wirings(toggles.size(), vector<int>(buttons.size(), 0));
 
         for (int i = 0; i < buttons.size(); i++) { // Build a binary matrix with the changes made by each button 
             for (int j = 0; j < buttons[i].size(); j++) {
-                changes[buttons[i][j]][i] = 1;
+                wirings[buttons[i][j]][i] = 1;
             }
         }
 
-        vector<vector<int>> configs = getConfigs(changes, toggles); // Returns a vector with all the valid configurations for the machine
-        int minpresses = configs[0].size();
+        vector<int> presses = getPresses(wirings, toggles); // Returns a vector with the number of presses of every valid configuration
+        int minpresses = presses[0];
 
-        for (int i = 0; i < configs.size(); i++) { // Find the minimum number of button presses among the valid configurations
-            int presses = 0;
-
-            for (int j = 0; j < configs[i].size(); j++) { // Count the number of button presses of a given configuration
-                if (configs[i][j] == 1) {
-                    presses++;
-                }
-            }
-
-            if (presses < minpresses) { // Update the minimum number of button presses
-                minpresses = presses;
+        for (int i = 1; i < presses.size(); i++) { // Find the minimum number of button presses for the machine
+            if (presses[i] < minpresses) {
+                minpresses = presses[i];
             }
         }
 

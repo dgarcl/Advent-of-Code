@@ -3,19 +3,14 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <stdexcept>
 using namespace std;
 
-class Fraction {
+class Fraction { // Class to handle arithmetic with fractions
 private:
     long long num, denom;
 
 public:
     Fraction(long long x = 1, long long y = 1) : num(x), denom(y) {
-        if (denom == 0) {
-            throw invalid_argument("Division by 0");
-        }
-
         long long g = __gcd(abs(num), abs(denom));
 
         if (g != 0) {
@@ -27,14 +22,6 @@ public:
             num *= -1;
             denom *= -1;
         }
-    }
-
-    long long getNum() const {
-        return num;
-    }
-
-    long long getDenom() const {
-        return denom;
     }
 
     Fraction operator+(const Fraction& other) const {
@@ -53,12 +40,28 @@ public:
         return Fraction(this->num * other.denom, this->denom * other.num);
     }
 
-    bool operator==(const Fraction& other) const {
-        return(this->num == other.num && this->denom == other.denom);
+    Fraction& operator+=(const Fraction& other) {
+        *this = *this + other;
+        return *this;
     }
 
-    bool operator!=(const Fraction& other) const {
-        return(this->num != other.num || this->denom != other.denom);
+    Fraction& operator-=(const Fraction& other) {
+        *this = *this - other;
+        return *this;
+    }
+
+    Fraction& operator*=(const Fraction& other) {
+        *this = *this * other;
+        return *this;
+    }
+
+    Fraction& operator/=(const Fraction& other) {
+        *this = *this / other;
+        return *this;
+    }
+
+    bool operator==(const Fraction& other) const {
+        return(this->num == other.num && this->denom == other.denom);
     }
 
     bool operator<(const Fraction& other) const {
@@ -69,27 +72,28 @@ public:
         return(this->num * other.denom > other.num * this->denom);
     }
 
-    int ceil() {
-        Fraction other(1, this->denom);
-
-        while (this->denom != 1) {
-            *this = *this + other;
-        }
-
-        return this->num;
+    bool operator!=(const Fraction& other) const {
+        return!(*this == other);
     }
 
-    void display() const {
-        if (denom != 1) {
-            cout << num << "/" << denom;
-        }
-        else {
-            cout << num;
-        }
+    explicit operator int() const {
+        return num / denom;
     }
+
+    friend ostream& operator<<(ostream& os, const Fraction& f);
 };
 
-vector<vector<Fraction>> getConfigs(vector<vector<Fraction>>& A, vector<Fraction>& b) { // Finds all valid solutions for a given system of linear equations
+ostream& operator<<(ostream& os, const Fraction& f) {
+    if (f.denom == 1) {
+        os << f.num;
+    } else {
+        os << f.num << "/" << f.denom;
+    }
+
+    return os;
+}
+
+vector<Fraction> getPresses(vector<vector<Fraction>>& A, vector<Fraction>& b) { // Finds the presses of every valid solution for a given system of linear equations
     vector<int> pivots;
     int rows = A.size();
     int cols = A[0].size();
@@ -108,54 +112,54 @@ vector<vector<Fraction>> getConfigs(vector<vector<Fraction>>& A, vector<Fraction
             }
         }
 
-        if (j < rows) {
+        if (j < rows) { // Check wether a pivot was found
             for (int j = p + 1; j < rows; j++) { // Performs elimination on rows below the pivots
                 Fraction d = A[j][i] / A[p][i];
-                b[j] = b[j] - (b[p] * d);
+                b[j] -= b[p] * d;
 
                 for (int k = i; k < cols; k++) {
-                    A[j][k] = A[j][k] - (A[p][k] * d);
+                    A[j][k] -= A[p][k] * d;
                 }
             }
         }
     }
 
-    for (int i = 0; i < pivots.size(); i++) {
+    for (int i = 0; i < pivots.size(); i++) { // Scales rows so that pivots positions are 1s
         int p = pivots[i];
-        Fraction d = Fraction(1) / A[i][p];
+        b[i] /= A[i][p];
 
-        b[i] = b[i] * d;
-
-        for (int j = p; j < cols; j++) {
-            A[i][j] = A[i][j] * d;
+        for (int j = p + 1; j < cols; j++) {
+            A[i][j] /= A[i][p];
         }
+
+        A[i][p] = 1;
     }
 
     for (int i = 1; i < pivots.size(); i++) { // Transforms our matrix into RREF
         int p = pivots[i];
 
         for (int j = i - 1; j >= 0; j--) { // Performs elimination on rows above the pivots
-            Fraction d = A[j][p];
+            b[j] -= b[i] * A[j][p];
 
-            b[j] = b[j] - (b[i] * d);
-
-            for (int k = p; k < cols; k++) {
-                A[j][k] = A[j][k] - (A[i][k] * d);
+            for (int k = p + 1; k < cols; k++) {
+                A[j][k] -= A[i][k] * A[j][p];
             }
+
+            A[j][p] = 0;
         }
     }
 
-    for (int i = 0; i < rows; i++) { // Scan the matrix for inconsistencies (0 = 1)
+    for (int i = 0; i < rows; i++) { // Scan the matrix for inconsistencies (0 = sth)
         int j;
 
         for (j = 0; j < cols; j++) {
-            if (A[i][j] == 1) {
+            if (A[i][j] != 0) {
                 break;
             }
         }
 
         if (j == cols && b[i] != 0) {
-            return vector<vector<Fraction>>();
+            return vector<Fraction>();
         }
     }
 
@@ -173,8 +177,7 @@ vector<vector<Fraction>> getConfigs(vector<vector<Fraction>>& A, vector<Fraction
 
         if (j < pivots.size()) { // We modify the particular solution for each non-free variable
             particularsol[i] = b[j];
-        }
-        else { // We add a vector to the nullspace for each free variable
+        } else { // We add a vector to the nullspace for each free variable
             vector<Fraction> temp(cols, 0);
 
             for (int k = 0; k < pivots.size(); k++) {
@@ -188,79 +191,84 @@ vector<vector<Fraction>> getConfigs(vector<vector<Fraction>>& A, vector<Fraction
         }
     }
 
-    // -----------------------------------------------------------------------------------
-    // From this point onwards we are trying to find the minimal positive integer solution
-    // -----------------------------------------------------------------------------------
+    vector<Fraction> presses;
 
-    vector<vector<Fraction>> configs;
+    if (nullspace.size() == 0) { // If there were no free variables, the solution is the particular solution
+        Fraction sum = 0;
 
-    if (nullspace.size() == 0) { // NULL CASE
-        configs.push_back(particularsol);
+        for (int i = 0; i < cols; i++) {
+            sum += particularsol[i];
+        }
 
-        return configs;
+        presses.push_back(sum);
+
+        return presses;
     }
 
-    vector<vector<Fraction>> N(cols, vector<Fraction>(nullspace.size(), 0));
+    int nulls = nullspace.size();
+    vector<vector<Fraction>> N(cols, vector<Fraction>(nulls, 0));
     vector<Fraction> c(cols, 0);
 
-    rows = N.size();
-    cols = N[0].size();
-    pivots.clear();
+    for (int i = 0; i < cols; i++) { // Build another matrix equation to find the weights of the free variables
+        c[i] = particularsol[i] * -1;
 
-    for (int i = 0; i < rows; i++) {
-        c[i] = Fraction(0) - particularsol[i];
-
-        for (int j = 0; j < cols; j++) {
+        for (int j = 0; j < nulls; j++) { // The new matrix columns' are the vectors of the nullspace
             N[i][j] = nullspace[j][i];
         }
     }
 
-    vector<Fraction> bounds(cols, Fraction(250));
+    vector<Fraction> bounds(nulls, Fraction(250));
 
-    for (int i = 0; i < rows; i++) {
+    for (int i = 0; i < cols; i++) { // Find bounds for the weights by ensuring positivity on each row
         int j;
 
-        for (j = 0; j < cols; j++) {
-            if (N[i][j] > Fraction(0)) {
+        for (j = 0; j < nulls; j++) { // Scan the structure of each row searching for a suitable inequality
+            if (N[i][j] > 0) {
                 break;
             }
         }
 
-        if (j == cols) {
-            for (j = 0; j < cols; j++) {
-                if (N[i][j] < Fraction(0) && c[i] / N[i][j] < bounds[j]) {
+        if (j == nulls) { // If all entries on a row are negative we have found an upper bound for the weight
+            for (j = 0; j < nulls; j++) {
+                if (N[i][j] < 0 && (c[i] / N[i][j]) < bounds[j]) { // Update the weight's upper bound
                     bounds[j] = c[i] / N[i][j];
                 }
             }
         }
     }
 
-    vector<int> coeffs(cols, 0);
+    vector<int> coeffs(nulls, 0);
 
-    while (true) {
-        vector<Fraction> temp = particularsol;
+    while (true) { // Find all possible configurations within the computed bounds
+        vector<Fraction> config = particularsol;
         int i;
 
-        for (i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                temp[i] = temp[i] + Fraction(coeffs[j]) * N[i][j];
+        for (i = 0; i < cols; i++) { // Build a specific configuration from a set of coefficients for the free variables
+            for (int j = 0; j < nulls; j++) { 
+                config[i] += N[i][j] * coeffs[j];
             }
 
-            if (temp[i].getNum() < 0 || temp[i].getDenom() != 1) {
+            if (config[i] < 0 || config[i] != int(config[i])) { // Check that the configuration is valid
                 break;
             }
         }
 
-        if (i == rows) {
-            configs.push_back(temp);
+        if (i == cols) { // For valid configurations, calculate their number of presses
+            Fraction sum = 0;
+
+            for (int j = 0; j < cols; j++) {
+                sum += config[j];
+            }
+
+            presses.push_back(sum);
         }
 
         int pos = 0;
 
-        while (pos < coeffs.size()) {
+        while (pos < coeffs.size()) { // Find the next set of coefficients for the free variables
             coeffs[pos]++;
 
-            if (coeffs[pos] < bounds[pos].ceil() + 1) {
+            if (bounds[pos] + 1 > coeffs[pos]) {
                 break;
             }
 
@@ -268,12 +276,12 @@ vector<vector<Fraction>> getConfigs(vector<vector<Fraction>>& A, vector<Fraction
             pos++;
         }
 
-        if (pos == coeffs.size()) {
+        if (pos == coeffs.size()) { // When all possible combinations of weights have been checked we exit the loop
             break;
         }
     }
 
-    return configs;
+    return presses;
 }
 
 int main() {
@@ -286,7 +294,7 @@ int main() {
     }
 
     string line;
-    Fraction totalpresses(0);
+    Fraction totalpresses = 0;
 
     while (getline(file, line)) { // Parse the content of the file
         int brackets = line.find("]");
@@ -297,7 +305,7 @@ int main() {
         vector<vector<int>> buttons;
         int parsed = brackets + 1;
 
-        while (parsed < (braces - 1)) { // Build a vector of vectors with the lights that are affected for each button
+        while (parsed < braces - 1) { // Build a vector of vectors with the lights that are affected for each button
             vector<int> temp;
             int parenthesis = line.find(")", parsed);
 
@@ -325,41 +333,29 @@ int main() {
             parsed = comma + 1;
         }
 
-        vector<vector<Fraction>> changes(joltages.size(), vector<Fraction>(buttons.size(), 0));
+        vector<vector<Fraction>> wirings(joltages.size(), vector<Fraction>(buttons.size(), 0));
 
-        for (int i = 0; i < buttons.size(); i++) { // Build a binary matrix with the changes made by each button 
+        for (int i = 0; i < buttons.size(); i++) { // Build a matrix with the changes made by each button 
             for (int j = 0; j < buttons[i].size(); j++) {
-                changes[buttons[i][j]][i] = 1;
+                wirings[buttons[i][j]][i] = 1;
             }
         }
 
-        vector<vector<Fraction>> configs = getConfigs(changes, joltages); // Returns a vector with all the valid configurations for the machine
-        Fraction minpresses(1000000000);
+        vector<Fraction> presses = getPresses(wirings, joltages); // Returns a vector with the number of presses of every valid configuration
+        Fraction minpresses = presses[0];
 
-        for (int i = 0; i < configs.size(); i++) { // Find the minimum number of button presses among the valid configurations
-            Fraction presses(0);
-
-            for (int j = 0; j < configs[i].size(); j++) { // Count the number of button presses of a given configuration
-                presses = presses + configs[i][j];
-            }
-
-            if (presses < minpresses) { // Update the minimum number of button presses
-                minpresses = presses;
+        for (int i = 1; i < presses.size(); i++) { // Find the minimum number of button presses for the machine
+            if (presses[i] < minpresses) { 
+                minpresses = presses[i];
             }
         }
 
-        if (minpresses == Fraction(1000000000)) {
-            cout << "problem" << endl;
-        } else {
-            totalpresses = totalpresses + minpresses;
-        }
+        totalpresses += minpresses;
     }
 
     file.close();
 
-    cout << "The fewest button presses required to correctly configure the joltage level counter on all of the machines is ";
-    totalpresses.display();
-    cout << endl;
+    cout << "The fewest button presses required to correctly configure the joltage level counter on all of the machines is " << totalpresses << endl;
 
     return 0;
 }
