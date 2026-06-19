@@ -69,6 +69,16 @@ public:
         return(this->num * other.denom > other.num * this->denom);
     }
 
+    int ceil() {
+        Fraction other(1, this->denom);
+
+        while (this->denom != 1) {
+            *this = *this + other;
+        }
+
+        return this->num;
+    }
+
     void display() const {
         if (denom != 1) {
             cout << num << "/" << denom;
@@ -198,76 +208,68 @@ vector<vector<Fraction>> getConfigs(vector<vector<Fraction>>& A, vector<Fraction
     pivots.clear();
 
     for (int i = 0; i < rows; i++) {
-        c[i] = particularsol[i];
+        c[i] = Fraction(0) - particularsol[i];
 
         for (int j = 0; j < cols; j++) {
             N[i][j] = nullspace[j][i];
         }
     }
 
-    if (cols == 1) {
-        for (int i = 0; i < 250; i++) {
-            vector<Fraction> temp = particularsol;
-            bool valid = true;
+    vector<Fraction> bounds(cols, Fraction(250));
 
-            for (int j = 0; j < rows; j++) {
-                temp[j] = temp[j] + Fraction(i) * N[j][0];
+    for (int i = 0; i < rows; i++) {
+        int j;
 
-                if (temp[j].getNum() < 0 || temp[j].getDenom() != 1) {
-                    valid = false;
-                    break;
-                }
-            }
-
-            if (valid) {
-                configs.push_back(temp);
+        for (j = 0; j < cols; j++) {
+            if (N[i][j] > Fraction(0)) {
+                break;
             }
         }
-    }
 
-    if (cols == 2) {
-        for (int i = 0; i < 250; i++) {
-            for (int j = 0; j < 250; j++) {
-                vector<Fraction> temp = particularsol;
-                bool valid = true;
-
-                for (int k = 0; k < rows; k++) {
-                    temp[k] = temp[k] + Fraction(i) * N[k][0] + Fraction(j) * N[k][1];
-
-                    if (temp[k].getNum() < 0 || temp[k].getDenom() != 1) {
-                        valid = false;
-                        break;
-                    }
-                }
-
-                if (valid) {
-                    configs.push_back(temp);
+        if (j == cols) {
+            for (j = 0; j < cols; j++) {
+                if (N[i][j] < Fraction(0) && c[i] / N[i][j] < bounds[j]) {
+                    bounds[j] = c[i] / N[i][j];
                 }
             }
         }
     }
 
-    if (cols > 2) {
-        for (int i = 0; i < 250; i++) {
-            for (int j = 0; j < 250; j++) {
-                for (int k = 0; k < 250; k++) {
-                    vector<Fraction> temp = particularsol;
-                    bool valid = true;
+    vector<int> coeffs(cols, 0);
 
-                    for (int l = 0; l < rows; l++) {
-                        temp[l] = temp[l] + Fraction(i) * N[l][0] + Fraction(j) * N[l][1] + Fraction(k) * N[l][2];
+    while (true) {
+        vector<Fraction> temp = particularsol;
+        int i;
 
-                        if (temp[l].getNum() < 0 || temp[l].getDenom() != 1) {
-                            valid = false;
-                            break;
-                        }
-                    }
-
-                    if (valid) {
-                        configs.push_back(temp);
-                    }
-                }
+        for (i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                temp[i] = temp[i] + Fraction(coeffs[j]) * N[i][j];
             }
+
+            if (temp[i].getNum() < 0 || temp[i].getDenom() != 1) {
+                break;
+            }
+        }
+
+        if (i == rows) {
+            configs.push_back(temp);
+        }
+
+        int pos = 0;
+
+        while (pos < coeffs.size()) {
+            coeffs[pos]++;
+
+            if (coeffs[pos] < bounds[pos].ceil() + 1) {
+                break;
+            }
+
+            coeffs[pos] = 0;
+            pos++;
+        }
+
+        if (pos == coeffs.size()) {
+            break;
         }
     }
 
