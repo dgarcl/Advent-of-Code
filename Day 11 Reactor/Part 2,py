@@ -1,0 +1,79 @@
+def getDistancesToReactor(device, serverRack, distances): # Recursively compute the distance from a device to the reactor
+    distance = 0
+    
+    if device in distances: # Use a dictionary to avoid recomputing distances 
+        return distances[device]
+
+    # The distance is computed as the maximum between the distance of its succesors + 1
+    for output in serverRack[device]: 
+        distance = max(distance, getDistancesToReactor(output, serverRack, distances) + 1)
+
+    distances[device] = distance # Update the distances dictionary accordingly
+
+    return distance
+
+vfid = open("input.txt")
+
+serverRack = {}
+
+for line in vfid: # Read the list of the devices and their outputs
+    # Find the label of the device 
+    device = line[: line.find(":")]
+    line = line[line.find(" ") + 1 :]
+    outputs = []
+
+    # Append the labels of all the outputs of the device to a list
+    while(True):
+        if (line.find(" ") != -1):
+            outputs.append(line[: line.find(" ")])
+            line = line[line.find(" ") + 1 :]
+        else:
+            outputs.append(line[: -1])
+            break
+
+    serverRack[device] = outputs # Add the device and its outputs to a dictionary
+
+vfid.close()
+
+distances = {}
+distances["out"] = 0
+distances["svr"] = getDistancesToReactor("svr", serverRack, distances)
+
+order = []
+
+# Order the devices so that each one appears before any of its outputs 
+for device in distances:
+    if len(order) == 0:
+        order.append(device)
+    else: # Each device gets sorted according to its distance to the reactor
+        for i in range(len(order)):
+            if (distances[device] > distances[order[i]]) and (device not in order):
+                order.insert(i, device)
+
+order.reverse()
+
+mustVisit = ["out", "dac", "fft", "svr"] # Create a list with the devices our path must visit (in inverse order)
+totalpaths = 1
+
+# At each iteration compute the number of paths between any two adjacent devices of our must visit list
+for i in range(len(mustVisit) - 1):
+    targetDevice = mustVisit[i]
+    sourceDevice = mustVisit[i + 1]
+
+    paths = {}
+
+    # Loop trough the devices in reverse order
+    for device in order:
+        paths[device] = 0
+
+        if device == targetDevice: # Only one path goes from the target device to itself
+            paths[device] = 1
+
+        if device != "out":
+            # The paths from a given device to the target are calculated the sum of the paths from its outputs to the target
+            for output in serverRack[device]:
+                paths[device] += paths[output]
+
+    totalpaths *= paths[sourceDevice] # Multiply the total number of paths by the paths between the devices of this iteration
+
+print(totalpaths, 'of those paths visit both "dac" and "fft"')
