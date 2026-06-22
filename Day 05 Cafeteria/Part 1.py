@@ -1,7 +1,7 @@
 vfid = open("input.txt")
 
 ranges = []
-IDs = []
+ids = []
 
 blankline = False
 
@@ -21,14 +21,14 @@ for line in vfid:
         ranges.append((start, end))
     # If the blank line has been reached, we append the line into our ingredient IDs
     else:
-        IDs.append(int(line[: -1]))
+        ids.append(int(line[: -1]))
 
 vfid.close()
 
 fresh = 0
 
 # Loop through our ingredient IDs
-for ingredient in IDs:
+for ingredient in ids:
     spoilt = True
 
     # Check for each of our ingredient ID ranges

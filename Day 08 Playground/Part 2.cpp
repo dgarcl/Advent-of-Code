@@ -8,13 +8,13 @@ using namespace std;
 
 class JunctionBox { // We construct a class that handles the coordinates of each junction box
 private:
-    int X, Y, Z;
+    int x, y, z;
 
 public:
-    JunctionBox(int x = 0, int y = 0, int z = 0) : X(x), Y(y), Z(z) {} // Constructor of the class
+    JunctionBox(int x = 0, int y = 0, int z = 0) : x(x), y(y), z(z) {} // Constructor of the class
 
     int getxcoord() { // Returns the x coordinate of a junction box
-        return X;
+        return x;
     }
 
     double distance(const JunctionBox& other) const { // Computes the euclidean distance between two junction boxes
@@ -22,26 +22,26 @@ public:
         double temp = 0;
 
         // Calculates the distance on the x-axis
-        temp = this->X - other.X;
+        temp = this->x - other.x;
         distance += temp * temp;
 
         // Calculates the distance on the y-axis
-        temp = this->Y - other.Y;
+        temp = this->y - other.y;
         distance += temp * temp;
 
         // Calculates the distance on the z-axis
-        temp = this->Z - other.Z;
+        temp = this->z - other.z;
         distance += temp * temp;
 
         return sqrt(distance);
     }
 
     bool operator == (const JunctionBox& other) const { // Compares if two junction boxes are equal
-        return (this->X == other.X && this->Y == other.Y && this->Z == other.Z); 
+        return (this->x == other.x && this->y == other.y && this->z == other.z); 
     }
 
     void print() { // Prints the coordinates of a juntion box
-        cout << "X = " << X << ", Y = " << Y << ", Z = " << Z  << "."; 
+        cout << "x = " << x << ", y = " << y << ", z = " << z  << "."; 
     }
 };
 
@@ -77,7 +77,6 @@ int main() {
     
     if (!file.is_open()) { // Check that the file was found correctly
         cout << "ERROR: Failed to open file." << endl;
-
         return 1;
     }
 

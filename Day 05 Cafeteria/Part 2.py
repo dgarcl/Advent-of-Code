@@ -23,21 +23,21 @@ vfid.close()
 
 # Sort our igredient ID ranges to find the fresh ingredient ID ranges
 ranges.sort()
-IDs = []
+ids = []
 
 # Loop through our igredient ID ranges
 for start, end in ranges:
     # If our range doesnt overlap with the previous one, we append it
-    if (len(IDs) == 0) or (IDs[-1][1] < start):
-        IDs.append([start, end])  
+    if (len(ids) == 0) or (ids[-1][1] < start):
+        ids.append([start, end])  
     # If our range overlaps with the previous one, we modify it by taking their union
     else:
-        IDs[-1][1] = max(IDs[-1][1], end)
+        ids[-1][1] = max(ids[-1][1], end)
 
 fresh = 0
 
 # Loop through our fresh ingredient ID ranges to find how many ingredient IDs are considered to be fresh
-for start, end in IDs:
+for start, end in ids:
     fresh += (end + 1) - start
 
 print("According to the fresh ingredient ID ranges,", fresh, "ingredient IDs are considered to be fresh")
